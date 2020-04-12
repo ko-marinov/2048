@@ -13,10 +13,10 @@ class Board:
                 self.m[i][j] = iterable[n]
 
     def val_spawner(self):
-        return 2 * random.randint(0, 1)
+        return 2 * random.randint(1, 2)
 
     def pos_selector(self, select_from):
-        return select_from[random.randint(0, len(select_from))]
+        return select_from[random.randint(0, len(select_from) - 1)]
 
     def __repr__(self):
         s = "Board:\n"
