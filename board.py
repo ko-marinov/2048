@@ -36,6 +36,23 @@ class Board:
                 return False
         return True
 
+    def is_deadend(self):
+        m = self.m
+
+        # check empty cells
+        for i, j in itertools.product(range(self.rows), range(self.cols)):
+            if m[i][j] == 0:
+                return False
+
+        # check adjacent cells
+        for i, j in itertools.product(range(self.rows), range(self.cols - 1)):
+            if m[i][j] == m[i][j+1]:
+                return False
+        for i, j in itertools.product(range(self.rows - 1), range(self.cols)):
+            if m[i][j] == m[i+1][j]:
+                return False
+        return True
+
     def spawn(self, val_spawner=None, pos_selector=None):
         if val_spawner is None:
             val_spawner = self.val_spawner
@@ -46,8 +63,7 @@ class Board:
             if self.m[i][j] == 0:
                 empty_cells.append((i, j))
 
-        if not empty_cells:
-            print("GAME OVER")
+        assert empty_cells
 
         row, col = pos_selector(empty_cells)
         self.m[row][col] = val_spawner()

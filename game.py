@@ -17,7 +17,11 @@ class Grid:
         self.size = Size(4, 4)
         self.font = pygame.font.SysFont(None, 20)
 
-    def draw(self, board, surface):
+    def draw(self, game, board, surface):
+        if game.check_game_over():
+            text = self.font.render("GAME OVER", True, (255, 255, 255))
+            surface.blit(text, [self.rect.width // 2, self.rect.height // 2])
+            return
         pygame.draw.rect(surface, self.bg_color, self.rect)
         cell_size = Size(self.rect.width // 4, self.rect.height // 4)
         for row in range(self.size.h):
@@ -28,6 +32,34 @@ class Grid:
                 text = self.font.render(
                     str(board.m[row][col]), True, pygame.color.THECOLORS["white"])
                 surface.blit(text, [50 + col*100, 50 + row*100])
+
+
+class Game:
+    def __init__(self, board):
+        self.board = board
+        self.is_game_over = False
+
+    def handle_input(self, event):
+        board = self.board
+        prev_state = board.get_state()
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
+            board.left()
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
+            board.right()
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+            board.up()
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
+            board.down()
+        if not board.check_state(prev_state):
+            board.spawn()
+
+    def check_game_over(self):
+        if self.is_game_over:
+            return True
+        self.is_game_over = self.board.is_deadend()
+        if self.is_game_over:
+            print("[ GAME OVER ]\n", self.board)
+        return self.is_game_over
 
 
 def main():
@@ -48,6 +80,9 @@ def main():
     board.spawn()
     board.spawn()
 
+    # Init game
+    game = Game(board)
+
     # Disable repeat
     pygame.key.set_repeat(0)
 
@@ -58,25 +93,13 @@ def main():
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
                 sys.exit()
-
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                board.left()
-                board.spawn()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                board.right()
-                board.spawn()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-                board.up()
-                board.spawn()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-                board.down()
-                board.spawn()
+            game.handle_input(event)
 
         # Game logic
 
         # Render
         screen.fill(black)
-        grid.draw(board, screen)
+        grid.draw(game, board, screen)
         pygame.display.flip()
 
 
