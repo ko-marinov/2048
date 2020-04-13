@@ -34,8 +34,8 @@ class Grid:
 
     def draw(self, game, board, surface):
         if game.check_game_over():
-            text = self.font.render("GAME OVER", True, (255, 255, 255))
-            surface.blit(text, [self.rect.width // 2, self.rect.height // 2])
+            self.draw_text_at_rect_center(
+                surface, game.game_over_message, self.rect)
             return
         cell_size = Size(self.rect.width // 4, self.rect.height // 4)
         for row in range(self.size.h):
@@ -46,16 +46,21 @@ class Grid:
 
     def draw_tile(self, surface, value, rect):
         pygame.draw.rect(surface, Grid.TILE_COLORS[value], rect)
-        text = self.font.render(
-            str(value), True, pygame.color.THECOLORS["white"])
-        surface.blit(
-            text, [rect.x + rect.width // 2, rect.y + rect.height // 2])
+        if value:
+            self.draw_text_at_rect_center(surface, str(value), rect)
+
+    def draw_text_at_rect_center(self, surface, text, rect, color=(255, 255, 255)):
+        text_surf = self.font.render(text, True, color)
+        text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
+        text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
+        surface.blit(text_surf, [text_pos_x, text_pos_y])
 
 
 class Game:
     def __init__(self, board):
         self.board = board
         self.is_game_over = False
+        self.game_over_message = ""
 
     def handle_input(self, event):
         board = self.board
@@ -74,9 +79,14 @@ class Game:
     def check_game_over(self):
         if self.is_game_over:
             return True
-        self.is_game_over = self.board.is_deadend()
-        if self.is_game_over:
+        if self.board.is_deadend():
+            self.game_over_message = "GAME OVER"
+            self.is_game_over = True
             print("[ GAME OVER ]\n", self.board)
+        if self.board.is_complete():
+            self.game_over_message = "CONGRATULATIONS! YOU GET 2048!"
+            self.is_game_over = True
+            print("[ SUCCESS: 2048 ]\n", self.board)
         return self.is_game_over
 
 
@@ -85,6 +95,8 @@ def main():
 
     size = width, height = 400, 400
     black = 0, 0, 0
+    frames_per_second = 60
+    frame_delay_ms = 1000 // frames_per_second
 
     screen = pygame.display.set_mode(size)
 
@@ -117,6 +129,8 @@ def main():
         screen.fill(black)
         grid.draw(game, board, screen)
         pygame.display.flip()
+
+        pygame.time.delay(frame_delay_ms)
 
 
 if __name__ == "__main__":

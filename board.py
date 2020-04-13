@@ -53,6 +53,12 @@ class Board:
                 return False
         return True
 
+    def is_complete(self):
+        for i, j in itertools.product(range(self.rows), range(self.cols)):
+            if self.m[i][j] == 2048:
+                return True
+        return False
+
     def spawn(self, val_spawner=None, pos_selector=None):
         if val_spawner is None:
             val_spawner = self.val_spawner
