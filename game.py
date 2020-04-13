@@ -10,10 +10,25 @@ Point = namedtuple('Point', ['x', 'y'])
 
 
 class Grid:
-    def __init__(self, rect, bg_color, border_color):
+
+    TILE_COLORS = {
+        0: (128, 128, 128),
+        2: (128, 0, 0),
+        4: (0, 128, 0),
+        8: (0, 0, 128),
+        16: (128, 0, 128),
+        32: (128, 128, 0),
+        64: (0, 128, 128),
+        128: (128, 255, 0),
+        256: (128, 0, 255),
+        512: (0, 128, 255),
+        1024: (255, 128, 0),
+        2048: (255, 0, 128),
+        4096: (0, 255, 128)
+    }
+
+    def __init__(self, rect):
         self.rect = rect
-        self.bg_color = bg_color
-        self.border_color = border_color
         self.size = Size(4, 4)
         self.font = pygame.font.SysFont(None, 20)
 
@@ -22,16 +37,19 @@ class Grid:
             text = self.font.render("GAME OVER", True, (255, 255, 255))
             surface.blit(text, [self.rect.width // 2, self.rect.height // 2])
             return
-        pygame.draw.rect(surface, self.bg_color, self.rect)
         cell_size = Size(self.rect.width // 4, self.rect.height // 4)
         for row in range(self.size.h):
             for col in range(self.size.w):
-                pos = Point(row * cell_size.h, col * cell_size.w)
-                pygame.draw.rect(surface, self.border_color,
-                                 pygame.Rect(pos, cell_size), 4)
-                text = self.font.render(
-                    str(board.m[row][col]), True, pygame.color.THECOLORS["white"])
-                surface.blit(text, [50 + col*100, 50 + row*100])
+                pos = Point(col * cell_size.w, row * cell_size.h)
+                self.draw_tile(
+                    surface, board.m[row][col], pygame.Rect(pos, cell_size))
+
+    def draw_tile(self, surface, value, rect):
+        pygame.draw.rect(surface, Grid.TILE_COLORS[value], rect)
+        text = self.font.render(
+            str(value), True, pygame.color.THECOLORS["white"])
+        surface.blit(
+            text, [rect.x + rect.width // 2, rect.y + rect.height // 2])
 
 
 class Game:
@@ -71,9 +89,7 @@ def main():
     screen = pygame.display.set_mode(size)
 
     # Create grid view
-    bg_color = pygame.color.THECOLORS['gray60']
-    border_color = pygame.color.THECOLORS['gray17']
-    grid = Grid(pygame.Rect(0, 0, width, height), bg_color, border_color)
+    grid = Grid(pygame.Rect(0, 0, width, height))
 
     # Set up initial board
     board = Board(4, 4)
