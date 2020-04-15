@@ -66,13 +66,13 @@ class Game:
         board = self.board
         prev_state = board.get_state()
         if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-            board.left()
+            board.move(Board.LEFT)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-            board.right()
+            board.move(Board.RIGHT)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-            board.up()
+            board.move(Board.UP)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-            board.down()
+            board.move(Board.DOWN)
         if not board.check_state(prev_state):
             board.spawn()
 

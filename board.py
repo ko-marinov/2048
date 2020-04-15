@@ -81,63 +81,131 @@ class Board:
     3. Replace line with collapsed one
     '''
 
-    def left(self):
-        # <--
-        for row in range(self.rows):
-            # create line
-            line = [i for i in self.m[row][:]]
-            # collapse
-            result = self.collapse(line)
-            # update row with result
-            for col in range(self.cols):
-                self.m[row][col] = result[col]
+    # Directions
+    LEFT = 0
+    RIGHT = 1
+    UP = 2
+    DOWN = 3
 
-    def right(self):
-        # -->
-        for row in range(self.rows):
-            # create line
-            line = [i for i in self.m[row][:]]
-            # collapse
-            result = self.collapse(line[::-1])
-            # update row with result
-            for col in range(self.cols):
-                self.m[row][col] = result[-1-col]
+    def move(self, direction):
+        lines = self.get_lines(direction)
+        new_lines, moves = self.collapse(lines)
+        self.handle_moves(moves, direction)
+        self.update_lines(new_lines, direction)
 
-    def up(self):
-        # ↑
-        for col in range(self.cols):
-            line = [self.m[i][col] for i in range(self.rows)]
-            result = self.collapse(line)
+    def get_lines(self, direction):
+        lines = []
+        if direction == Board.LEFT:
             for row in range(self.rows):
-                self.m[row][col] = result[row]
-
-    def down(self):
-        # ↓
-        for col in range(self.cols):
-            line = [self.m[i][col] for i in range(self.rows)]
-            result = self.collapse(line[::-1])
+                lines.append([i for i in self.m[row][:]])
+        elif direction == Board.RIGHT:
             for row in range(self.rows):
-                self.m[row][col] = result[-1-row]
+                lines.append([i for i in self.m[row][::-1]])
+        elif direction == Board.UP:
+            for col in range(self.cols):
+                lines.append([self.m[i][col] for i in range(self.rows)])
+        elif direction == Board.DOWN:
+            for col in range(self.cols):
+                lines.append([self.m[i][col]
+                              for i in reversed(range(self.rows))])
+        return lines
 
-    def collapse(self, line):
+    def get_positions(self, direction):
+        positions = []
+        if direction == Board.LEFT:
+            for row in range(self.rows):
+                positions.append([(row, i) for i in range(self.cols)])
+        elif direction == Board.RIGHT:
+            for row in range(self.rows):
+                positions.append([(row, i)
+                                  for i in reversed(range(self.cols))])
+        elif direction == Board.UP:
+            for col in range(self.cols):
+                positions.append([(i, col) for i in range(self.rows)])
+        elif direction == Board.DOWN:
+            for col in range(self.cols):
+                positions.append([(i, col)
+                                  for i in reversed(range(self.rows))])
+        return positions
+
+    def handle_moves(self, moves, direction):
+        if direction == Board.LEFT:
+            for row in range(self.rows):
+                for move in moves[row]:
+                    self.handle_move((row, move[0]), (row, move[1]))
+        elif direction == Board.RIGHT:
+            for row in range(self.rows):
+                for move in moves[row]:
+                    self.handle_move(
+                        (row, self.cols - 1 - move[0]),
+                        (row, self.cols - 1 - move[1]))
+        elif direction == Board.UP:
+            for col in range(self.cols):
+                for move in moves[col]:
+                    self.handle_move((move[0], col), (move[1], col))
+        elif direction == Board.DOWN:
+            for col in range(self.cols):
+                for move in moves[col]:
+                    self.handle_move(
+                        (self.rows - 1 - move[0], col),
+                        (self.rows - 1 - move[1], col))
+
+    def handle_move(self, cell_from, cell_to):
+        # there is gonna be single tile moving proc
+        pass
+
+    def update_lines(self, new_lines, direction):
+        if direction == Board.LEFT:
+            for row in range(self.rows):
+                for col in range(self.cols):
+                    self.m[row][col] = new_lines[row][col]
+        elif direction == Board.RIGHT:
+            for row in range(self.rows):
+                for col in range(self.cols):
+                    self.m[row][col] = new_lines[row][-1-col]
+        elif direction == Board.UP:
+            for col in range(self.cols):
+                for row in range(self.rows):
+                    self.m[row][col] = new_lines[col][row]
+        elif direction == Board.DOWN:
+            for col in range(self.cols):
+                for row in range(self.rows):
+                    self.m[row][col] = new_lines[col][-1-row]
+
+    def collapse(self, lines):
+        new_lines = []
+        moves = []
+        for line in lines:
+            new_line, line_moves = self.collapse_one_line(line)
+            new_lines.append(new_line)
+            moves.append(line_moves)
+        return new_lines, moves
+
+    def collapse_one_line(self, line):
         # [0, 2, 2, 4] -> [2, 0, 2, 4] -> [4, 0, 0, 4] -> [4, 4, 0, 0]
         # [2, 4, 4, 2] -> [2, 4, 4, 2] -> [2, 8, 0, 2] -> [2, 8, 2, 0]
         # [2, 4, 2, 4] -> [2, 4, 2, 4] (not a move)
-
+        moves = []
         target_cell = 0
         for i in range(1, len(line)):
             if line[i]:
                 if line[target_cell] == 0:
+                    # move to empty cell
                     line[target_cell], line[i] = line[i], line[target_cell]
+                    moves.append((i, target_cell))
                 elif line[target_cell] == line[i]:
+                    # move and collapse
                     line[target_cell] *= 2
                     line[i] = 0
+                    moves.append((i, target_cell))
                     target_cell += 1
                 else:
+                    # move to empty cell
                     target_cell += 1
-                    if i != target_cell:
+                    if target_cell != i:
                         line[target_cell], line[i] = line[i], line[target_cell]
-        return line
+                        moves.append((i, target_cell))
+        return line, moves
 
     def test_collapse_algo(self):
         lines = [[0, 2, 2, 4], [2, 4, 4, 2], [2, 4, 2, 4], [2, 2, 2, 2],
@@ -146,11 +214,11 @@ class Board:
         check = [[4, 4, 0, 0], [2, 8, 2, 0], [2, 4, 2, 4], [4, 4, 0, 0],
                  [4, 8, 0, 0], [4, 2, 0, 0], [4, 0, 0, 0], [4, 0, 0, 0]]
         for line, check in zip(lines, check):
-            result = self.collapse(line)
-            for i, v in enumerate(result):
+            new_line, _ = self.collapse_one_line(line)
+            for i, v in enumerate(new_line):
                 if v != check[i]:
                     print(
-                        f"Board/test_collapse: {result} != {check} at pos {i}")
+                        f"Board/test_collapse: {new_line} != {check} at pos {i}")
                     return
         print(".", end="")
 
@@ -210,16 +278,16 @@ def test_board():
     board = Board(4, 4, board_state)
 
     def left():
-        board.left()
+        board.move(Board.LEFT)
 
     def right():
-        board.right()
+        board.move(Board.RIGHT)
 
     def up():
-        board.up()
+        board.move(Board.UP)
 
     def down():
-        board.down()
+        board.move(Board.DOWN)
 
     instructions = [left, right, down, up, left, up, right, down]
     states = [
