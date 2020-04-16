@@ -3,33 +3,13 @@ from collections import namedtuple
 
 import pygame
 
-from board import Board
-
-Size = namedtuple('Size', ['w', 'h'])
-Point = namedtuple('Point', ['x', 'y'])
+from board import Board, game_objects
 
 
 class Grid:
-
-    TILE_COLORS = {
-        0: (128, 128, 128),
-        2: (128, 0, 0),
-        4: (0, 128, 0),
-        8: (0, 0, 128),
-        16: (128, 0, 128),
-        32: (128, 128, 0),
-        64: (0, 128, 128),
-        128: (128, 255, 0),
-        256: (128, 0, 255),
-        512: (0, 128, 255),
-        1024: (255, 128, 0),
-        2048: (255, 0, 128),
-        4096: (0, 255, 128)
-    }
-
     def __init__(self, rect):
         self.rect = rect
-        self.size = Size(4, 4)
+        self.size = (4, 4)
         self.font = pygame.font.SysFont(None, 20)
 
     def draw(self, game, board, surface):
@@ -37,17 +17,9 @@ class Grid:
             self.draw_text_at_rect_center(
                 surface, game.game_over_message, self.rect)
             return
-        cell_size = Size(self.rect.width // 4, self.rect.height // 4)
-        for row in range(self.size.h):
-            for col in range(self.size.w):
-                pos = Point(col * cell_size.w, row * cell_size.h)
-                self.draw_tile(
-                    surface, board.m[row][col], pygame.Rect(pos, cell_size))
-
-    def draw_tile(self, surface, value, rect):
-        pygame.draw.rect(surface, Grid.TILE_COLORS[value], rect)
-        if value:
-            self.draw_text_at_rect_center(surface, str(value), rect)
+        pygame.draw.rect(surface, (200, 200, 200), self.rect)
+        for go in game_objects:
+            go.draw(surface, self.font)
 
     def draw_text_at_rect_center(self, surface, text, rect, color=(255, 255, 255)):
         text_surf = self.font.render(text, True, color)
@@ -64,7 +36,6 @@ class Game:
 
     def handle_input(self, event):
         board = self.board
-        prev_state = board.get_state()
         if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
             board.move(Board.LEFT)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
@@ -73,8 +44,6 @@ class Game:
             board.move(Board.UP)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
             board.move(Board.DOWN)
-        if not board.check_state(prev_state):
-            board.spawn()
 
     def check_game_over(self):
         if self.is_game_over:
@@ -105,8 +74,8 @@ def main():
 
     # Set up initial board
     board = Board(4, 4)
-    board.spawn()
-    board.spawn()
+    board.spawn_random()
+    board.spawn_random()
 
     # Init game
     game = Game(board)
@@ -114,6 +83,7 @@ def main():
     # Disable repeat
     pygame.key.set_repeat(0)
 
+    ticks = pygame.time.get_ticks()
     while 1:
         # User input
         for event in pygame.event.get():
@@ -124,6 +94,11 @@ def main():
             game.handle_input(event)
 
         # Game logic
+        last_ticks = ticks
+        ticks = pygame.time.get_ticks()
+        dtime = ticks - last_ticks
+        for go in game_objects:
+            go.update(dtime)
 
         # Render
         screen.fill(black)

@@ -1,16 +1,118 @@
 import itertools
 import random
 
+import pygame
 
-class Board:
+from vec2 import Vec2
+
+game_objects = []
+
+
+class GameObject:
+    next_proc_id = 0
+
+    def __init__(self, pos=Vec2(0, 0)):
+        self.pos = pos
+        self.processes = {}
+        game_objects.append(self)
+
+    def destroy(self):
+        game_objects.remove(self)
+
+    def animate_transition(self, dest, duration):
+        velocity = (dest - self.pos) / duration
+        time_left = duration
+
+        def transpose_process(dtime):
+            nonlocal dest
+            nonlocal velocity
+            nonlocal time_left
+            self.pos += velocity * dtime
+            time_left -= dtime
+            if time_left <= 0:
+                self.pos = dest
+                return "DONE"
+            return "INPROGRESS"
+
+        GameObject.next_proc_id += 1
+        self.processes[GameObject.next_proc_id] = transpose_process
+
+    def draw(self, surface, font):
+        pass
+
+    def update(self, dtime):
+        finished_procs = []
+        for id, proc in self.processes.items():
+            status = proc(dtime)
+            if status == "DONE":
+                finished_procs.append(id)
+        for id in finished_procs:
+            del self.processes[id]
+
+
+class Tile(GameObject):
+    TILE_COLORS = {
+        0: (128, 128, 128),
+        2: (128, 0, 0),
+        4: (0, 128, 0),
+        8: (0, 0, 128),
+        16: (128, 0, 128),
+        32: (128, 128, 0),
+        64: (0, 128, 128),
+        128: (128, 255, 0),
+        256: (128, 0, 255),
+        512: (0, 128, 255),
+        1024: (255, 128, 0),
+        2048: (255, 0, 128),
+        4096: (0, 255, 128)
+    }
+
+    text_color = (255, 255, 255)
+
+    def __init__(self, value, row, col, size):
+        super().__init__(Vec2(size[0] * col, size[1] * row))
+        self.value = value
+        self.size = size
+
+    def move_to(self, row, col, duration):
+        dest = Vec2(self.size[0] * col, self.size[1] * row)
+        self.animate_transition(dest, duration)
+
+    def draw(self, surface, font):
+        rect = pygame.Rect((self.pos.x, self.pos.y), self.size)
+        pygame.draw.rect(surface, Tile.TILE_COLORS[self.value], rect)
+        text_surf = font.render(str(self.value), True, Tile.text_color)
+        text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
+        text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
+        surface.blit(text_surf, [text_pos_x, text_pos_y])
+
+
+class Board(GameObject):
+
+    # Directions
+    LEFT = 0
+    RIGHT = 1
+    UP = 2
+    DOWN = 3
+
+    TILE_MOVE_DURATION_MS = 300
+
     def __init__(self, rows, cols, iterable=None):
+        super().__init__((0, 0))
         self.rows = rows
         self.cols = cols
         self.m = [[0 for c in range(cols)] for r in range(rows)]
+        self.tiles = [[None for c in range(cols)] for r in range(rows)]
+        self.tiles_to_destroy = []
+        self.tiles_to_spawn = []
+        self.should_wait_for_move_finished = False
 
         if iterable != None:
             for n, (i, j) in enumerate(itertools.product(range(self.rows), range(self.cols))):
-                self.m[i][j] = iterable[n]
+                val = iterable[n]
+                if val:
+                    self.m[i][j] = val
+                    self.tiles[i][j] = Tile(val, i, j, (100, 100))
 
     def val_spawner(self):
         return 2 * random.randint(1, 2)
@@ -59,7 +161,11 @@ class Board:
                 return True
         return False
 
-    def spawn(self, val_spawner=None, pos_selector=None):
+    def spawn(self, value, row, col):
+        self.m[row][col] = value
+        self.tiles[row][col] = Tile(value, row, col, (100, 100))
+
+    def spawn_random(self, val_spawner=None, pos_selector=None):
         if val_spawner is None:
             val_spawner = self.val_spawner
         if pos_selector is None:
@@ -68,11 +174,33 @@ class Board:
         for i, j in itertools.product(range(self.rows), range(self.cols)):
             if self.m[i][j] == 0:
                 empty_cells.append((i, j))
-
         assert empty_cells
-
         row, col = pos_selector(empty_cells)
-        self.m[row][col] = val_spawner()
+        self.spawn(val_spawner(), row, col)
+
+    def delayed_call(self, duration, call):
+        time_left = duration
+
+        def delayed_call_process(dtime):
+            nonlocal time_left
+            time_left -= dtime
+            if time_left <= 0:
+                call()
+                return "DONE"
+            return "INPROGRESS"
+
+        GameObject.next_proc_id += 1
+        self.processes[GameObject.next_proc_id] = delayed_call_process
+
+    def handle_post_move(self):
+        for tile in self.tiles_to_destroy:
+            tile.destroy()
+        self.tiles_to_destroy.clear()
+        for val, row, col in self.tiles_to_spawn:
+            self.spawn(val, row, col)
+        self.tiles_to_spawn.clear()
+        self.spawn_random()
+        self.should_wait_for_move_finished = False
 
     '''
     Algorithm:
@@ -81,13 +209,9 @@ class Board:
     3. Replace line with collapsed one
     '''
 
-    # Directions
-    LEFT = 0
-    RIGHT = 1
-    UP = 2
-    DOWN = 3
-
     def move(self, direction):
+        if self.should_wait_for_move_finished:
+            return
         lines = self.get_lines(direction)
         new_lines, moves = self.collapse(lines)
         self.handle_moves(moves, direction)
@@ -149,10 +273,25 @@ class Board:
                     self.handle_move(
                         (self.rows - 1 - move[0], col),
                         (self.rows - 1 - move[1], col))
+        if self.should_wait_for_move_finished:
+            self.delayed_call(Board.TILE_MOVE_DURATION_MS,
+                              self.handle_post_move)
 
     def handle_move(self, cell_from, cell_to):
-        # there is gonna be single tile moving proc
-        pass
+        self.should_wait_for_move_finished = True
+        tiles = self.tiles
+        tile1 = tiles[cell_from[0]][cell_from[1]]
+        tile2 = tiles[cell_to[0]][cell_to[1]]
+        tile1.move_to(cell_to[0], cell_to[1], Board.TILE_MOVE_DURATION_MS)
+        tiles[cell_from[0]][cell_from[1]] = None
+        if tile2 is not None:
+            tiles[cell_to[0]][cell_to[1]] = None
+            self.tiles_to_destroy.append(tile1)
+            self.tiles_to_destroy.append(tile2)
+            self.tiles_to_spawn.append(
+                (tile1.value * 2, cell_to[0], cell_to[1]))
+        else:
+            tiles[cell_to[0]][cell_to[1]] = tile1
 
     def update_lines(self, new_lines, direction):
         if direction == Board.LEFT:
@@ -264,7 +403,7 @@ def test_board():
     board.pos_selector = create_pos_selector(pos_seq)
     for i in range(len(val_seq)):
         # do spawn
-        board.spawn()
+        board.spawn_random()
         # check board
         if not board.check_state(states[i]):
             print(f"\nState after {i}th instruction is uncorrect")
@@ -301,9 +440,9 @@ def test_board():
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 8, 16]
     ]
 
-    for i, move in enumerate(instructions):
+    for i, instruction in enumerate(instructions):
         # do move
-        move()
+        instruction()
         # check board
         if not board.check_state(states[i]):
             print(f"\nState after {i}th instruction is uncorrect")
