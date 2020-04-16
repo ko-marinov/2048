@@ -3,6 +3,7 @@ import random
 
 import pygame
 
+import game_settings as gs
 from vec2 import Vec2
 
 game_objects = []
@@ -37,7 +38,7 @@ class GameObject:
         GameObject.next_proc_id += 1
         self.processes[GameObject.next_proc_id] = transpose_process
 
-    def draw(self, surface, font):
+    def draw(self, surface):
         pass
 
     def update(self, dtime):
@@ -51,24 +52,6 @@ class GameObject:
 
 
 class Tile(GameObject):
-    TILE_COLORS = {
-        0: (128, 128, 128),
-        2: (128, 0, 0),
-        4: (0, 128, 0),
-        8: (0, 0, 128),
-        16: (128, 0, 128),
-        32: (128, 128, 0),
-        64: (0, 128, 128),
-        128: (128, 255, 0),
-        256: (128, 0, 255),
-        512: (0, 128, 255),
-        1024: (255, 128, 0),
-        2048: (255, 0, 128),
-        4096: (0, 255, 128)
-    }
-
-    text_color = (255, 255, 255)
-
     def __init__(self, value, row, col, size):
         super().__init__(Vec2(size[0] * col, size[1] * row))
         self.value = value
@@ -78,10 +61,11 @@ class Tile(GameObject):
         dest = Vec2(self.size[0] * col, self.size[1] * row)
         self.animate_transition(dest, duration)
 
-    def draw(self, surface, font):
+    def draw(self, surface):
         rect = pygame.Rect((self.pos.x, self.pos.y), self.size)
-        pygame.draw.rect(surface, Tile.TILE_COLORS[self.value], rect)
-        text_surf = font.render(str(self.value), True, Tile.text_color)
+        pygame.draw.rect(surface, gs.TILE_COLORS[self.value], rect)
+        text_surf = gs.FONT.render(
+            str(self.value), True, gs.FONT_DEFAULT_COLOR)
         text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
         text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
         surface.blit(text_surf, [text_pos_x, text_pos_y])
@@ -95,7 +79,7 @@ class Board(GameObject):
     UP = 2
     DOWN = 3
 
-    TILE_MOVE_DURATION_MS = 300
+    TILE_MOVE_DURATION_MS = 100
 
     def __init__(self, rows, cols, iterable=None):
         super().__init__((0, 0))
@@ -112,7 +96,7 @@ class Board(GameObject):
                 val = iterable[n]
                 if val:
                     self.m[i][j] = val
-                    self.tiles[i][j] = Tile(val, i, j, (100, 100))
+                    self.tiles[i][j] = Tile(val, i, j, gs.TILE_SIZE)
 
     def val_spawner(self):
         return 2 * random.randint(1, 2)

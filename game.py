@@ -3,26 +3,25 @@ from collections import namedtuple
 
 import pygame
 
+import game_settings as gs
 from board import Board, game_objects
 
 
 class Grid:
     def __init__(self, rect):
         self.rect = rect
-        self.size = (4, 4)
-        self.font = pygame.font.SysFont(None, 20)
 
     def draw(self, game, board, surface):
         if game.check_game_over():
             self.draw_text_at_rect_center(
                 surface, game.game_over_message, self.rect)
             return
-        pygame.draw.rect(surface, (200, 200, 200), self.rect)
+        pygame.draw.rect(surface, gs.SCENE_BACKGROUND_COLOR, self.rect)
         for go in game_objects:
-            go.draw(surface, self.font)
+            go.draw(surface)
 
-    def draw_text_at_rect_center(self, surface, text, rect, color=(255, 255, 255)):
-        text_surf = self.font.render(text, True, color)
+    def draw_text_at_rect_center(self, surface, text, rect, color=gs.FONT_DEFAULT_COLOR):
+        text_surf = gs.FONT.render(text, True, color)
         text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
         text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
         surface.blit(text_surf, [text_pos_x, text_pos_y])
@@ -61,19 +60,15 @@ class Game:
 
 def main():
     pygame.init()
+    gs.init()
 
-    size = width, height = 400, 400
-    black = 0, 0, 0
-    frames_per_second = 60
-    frame_delay_ms = 1000 // frames_per_second
-
-    screen = pygame.display.set_mode(size)
+    screen = pygame.display.set_mode(gs.WINDOWS_SIZE)
 
     # Create grid view
-    grid = Grid(pygame.Rect(0, 0, width, height))
+    grid = Grid(pygame.Rect(0, 0, gs.WINDOW_WIDTH, gs.WINDOW_HEIGHT))
 
     # Set up initial board
-    board = Board(4, 4)
+    board = Board(*gs.BOARD_CELL_SIZE)
     board.spawn_random()
     board.spawn_random()
 
@@ -101,11 +96,10 @@ def main():
             go.update(dtime)
 
         # Render
-        screen.fill(black)
         grid.draw(game, board, screen)
         pygame.display.flip()
 
-        pygame.time.delay(frame_delay_ms)
+        pygame.time.delay(gs.FRAME_MS)
 
 
 if __name__ == "__main__":
