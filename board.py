@@ -12,13 +12,27 @@ game_objects = []
 class GameObject:
     next_proc_id = 0
 
-    def __init__(self, pos=Vec2(0, 0)):
-        self.pos = pos
+    def __init__(self, pos=Vec2(0, 0), parent=None):
+        self.parent = parent
+        self._pos = Vec2(pos)
         self.processes = {}
         game_objects.append(self)
 
     def destroy(self):
         game_objects.remove(self)
+
+    @property
+    def gpos(self):
+        parent_pos = self.parent.gpos if self.parent else Vec2(0, 0)
+        return self.pos + parent_pos
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @pos.setter
+    def pos(self, value):
+        self._pos = Vec2(value)
 
     def animate_transition(self, dest, duration):
         velocity = (dest - self.pos) / duration
@@ -62,7 +76,7 @@ class Tile(GameObject):
         self.animate_transition(dest, duration)
 
     def draw(self, surface):
-        rect = pygame.Rect((self.pos.x, self.pos.y), self.size)
+        rect = pygame.Rect((self.gpos.x, self.gpos.y), self.size)
         pygame.draw.rect(surface, gs.TILE_COLORS[self.value], rect)
         text_surf = gs.FONT.render(
             str(self.value), True, gs.FONT_DEFAULT_COLOR)
@@ -97,6 +111,7 @@ class Board(GameObject):
                 if val:
                     self.m[i][j] = val
                     self.tiles[i][j] = Tile(val, i, j, gs.TILE_SIZE)
+                    self.tiles[i][j].parent = self
 
     def val_spawner(self):
         return 2 * random.randint(1, 2)
@@ -147,7 +162,8 @@ class Board(GameObject):
 
     def spawn(self, value, row, col):
         self.m[row][col] = value
-        self.tiles[row][col] = Tile(value, row, col, (100, 100))
+        self.tiles[row][col] = Tile(value, row, col, gs.TILE_SIZE)
+        self.tiles[row][col].parent = self
 
     def spawn_random(self, val_spawner=None, pos_selector=None):
         if val_spawner is None:

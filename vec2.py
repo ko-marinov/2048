@@ -2,9 +2,19 @@ import math
 
 
 class Vec2:
-    def __init__(self, x=0, y=0):
+    def __init__(self, *args):
+        if len(args) == 1:
+            x, y = args[0]
+        elif len(args) == 2:
+            x, y = args
+        else:
+            x, y = 0, 0
         self.x = x
         self.y = y
+
+    def __iter__(self):
+        yield self.x
+        yield self.y
 
     def __bool__(self):
         return self.x != 0 or self.y != 0
