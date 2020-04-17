@@ -6,7 +6,7 @@ import pygame
 import game_settings as gs
 from game_object import GameObject
 from vec2 import Vec2
-from tile import Tile
+from tile import TileFactory
 
 
 class Board(GameObject):
@@ -28,14 +28,14 @@ class Board(GameObject):
         self.tiles_to_destroy = []
         self.tiles_to_spawn = []
         self.should_wait_for_move_finished = False
+        self.tile_factory = TileFactory(self)
 
         if iterable != None:
             for n, (i, j) in enumerate(itertools.product(range(self.rows), range(self.cols))):
                 val = iterable[n]
                 if val:
                     self.m[i][j] = val
-                    self.tiles[i][j] = Tile(val, i, j, gs.TILE_SIZE)
-                    self.tiles[i][j].parent = self
+                    self.tiles[i][j] = self.tile_factory.create(val, i, j)
 
     def val_spawner(self):
         return 2 * random.randint(1, 2)
@@ -86,7 +86,7 @@ class Board(GameObject):
 
     def spawn(self, value, row, col):
         self.m[row][col] = value
-        self.tiles[row][col] = Tile(value, row, col, gs.TILE_SIZE)
+        self.tiles[row][col] = self.tile_factory.create(value, row, col)
         self.tiles[row][col].parent = self
 
     def spawn_random(self, val_spawner=None, pos_selector=None):
