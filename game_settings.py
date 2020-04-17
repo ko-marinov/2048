@@ -43,8 +43,8 @@ TILE_COLORS = {
 # fonst
 FONT = None
 FONT_DEFAULT_COLOR = (255, 255, 255)
-FONT_NAME = None
-FONT_SIZE = 50
+FONT_NAME = "data/fonts/Roboto-Medium.ttf"
+FONT_SIZE = 32
 
 
 def init():
@@ -57,4 +57,4 @@ def init():
     #GameSettings.FRAME_DURATION = 1000 // GameSettings.FPS
 
     global FONT
-    FONT = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
+    FONT = pygame.font.Font(FONT_NAME, FONT_SIZE)
