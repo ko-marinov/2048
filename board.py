@@ -4,85 +4,9 @@ import random
 import pygame
 
 import game_settings as gs
+from game_object import GameObject
 from vec2 import Vec2
-
-game_objects = []
-
-
-class GameObject:
-    next_proc_id = 0
-
-    def __init__(self, pos=Vec2(0, 0), parent=None):
-        self.parent = parent
-        self._pos = Vec2(pos)
-        self.processes = {}
-        game_objects.append(self)
-
-    def destroy(self):
-        game_objects.remove(self)
-
-    @property
-    def gpos(self):
-        parent_pos = self.parent.gpos if self.parent else Vec2(0, 0)
-        return self.pos + parent_pos
-
-    @property
-    def pos(self):
-        return self._pos
-
-    @pos.setter
-    def pos(self, value):
-        self._pos = Vec2(value)
-
-    def animate_transition(self, dest, duration):
-        velocity = (dest - self.pos) / duration
-        time_left = duration
-
-        def transpose_process(dtime):
-            nonlocal dest
-            nonlocal velocity
-            nonlocal time_left
-            self.pos += velocity * dtime
-            time_left -= dtime
-            if time_left <= 0:
-                self.pos = dest
-                return "DONE"
-            return "INPROGRESS"
-
-        GameObject.next_proc_id += 1
-        self.processes[GameObject.next_proc_id] = transpose_process
-
-    def draw(self, surface):
-        pass
-
-    def update(self, dtime):
-        finished_procs = []
-        for id, proc in self.processes.items():
-            status = proc(dtime)
-            if status == "DONE":
-                finished_procs.append(id)
-        for id in finished_procs:
-            del self.processes[id]
-
-
-class Tile(GameObject):
-    def __init__(self, value, row, col, size):
-        super().__init__(Vec2(size[0] * col, size[1] * row))
-        self.value = value
-        self.size = size
-
-    def move_to(self, row, col, duration):
-        dest = Vec2(self.size[0] * col, self.size[1] * row)
-        self.animate_transition(dest, duration)
-
-    def draw(self, surface):
-        rect = pygame.Rect((self.gpos.x, self.gpos.y), self.size)
-        pygame.draw.rect(surface, gs.TILE_COLORS[self.value], rect)
-        text_surf = gs.FONT.render(
-            str(self.value), True, gs.FONT_DEFAULT_COLOR)
-        text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
-        text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
-        surface.blit(text_surf, [text_pos_x, text_pos_y])
+from tile import Tile
 
 
 class Board(GameObject):

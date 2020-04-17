@@ -4,7 +4,8 @@ from collections import namedtuple
 import pygame
 
 import game_settings as gs
-from board import Board, game_objects
+from board import Board
+from game_object import game_objects
 
 
 class Grid:
