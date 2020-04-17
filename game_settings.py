@@ -2,13 +2,16 @@ import pygame
 
 
 # window size
-WINDOW_WIDTH = 400
-WINDOW_HEIGHT = 400
+WINDOW_WIDTH = 364
+WINDOW_HEIGHT = 450
 WINDOWS_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)
 
 # board size
-BOARD_WIDTH = 400
-BOARD_HEIGHT = 400
+BOARD_WIDTH = 332
+BOARD_HEIGHT = 332
+BOARD_BORDER = 20
+BOARD_MARGIN = (WINDOW_WIDTH - BOARD_WIDTH) / 2
+BOARD_POS = (BOARD_MARGIN, WINDOW_HEIGHT - BOARD_HEIGHT - BOARD_MARGIN)
 BOARD_SIZE = (BOARD_WIDTH, BOARD_HEIGHT)
 BOARD_CELL_SIZE = (4, 4)
 
@@ -22,7 +25,8 @@ FPS = 60
 FRAME_MS = 1000 // FPS
 
 # colors
-SCENE_BACKGROUND_COLOR = (255, 255, 255)
+SCENE_BACKGROUND_COLOR = pygame.Color("#102526")
+HUD_DEFAULT_COLOR = pygame.Color("#18494B")
 
 # fonst
 FONT = None
@@ -32,13 +36,5 @@ FONT_SIZE = 32
 
 
 def init():
-    # GameSettings.BOARD_SIZE = (
-    #    GameSettings.BOARD_WIDTH, GameSettings.BOARD_HEIGHT)
-
-    # GameSettings.TILE_SIZE = (
-    #    GameSettings.TILE_WIDTH, GameSettings.TILE_HEIGHT)
-
-    #GameSettings.FRAME_DURATION = 1000 // GameSettings.FPS
-
     global FONT
     FONT = pygame.font.Font(FONT_NAME, FONT_SIZE)

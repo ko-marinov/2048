@@ -13,11 +13,14 @@ class TileFactory:
     TILE_IMAGES = {}
 
     def load_tile_images(self):
-        path = "data/images"
+        path = "data/images/tiles"
         onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
         for f in onlyfiles:
             key = f.split(".")[0]
-            TileFactory.TILE_IMAGES[key] = pygame.image.load(join(path, f))
+            image = pygame.image.load(join(path, f))
+            size = (gs.TILE_WIDTH - 4, gs.TILE_HEIGHT - 4)
+            image = pygame.transform.scale(image, size)
+            TileFactory.TILE_IMAGES[key] = image
 
     def __init__(self, tile_parent=None):
         self.tile_parent = tile_parent

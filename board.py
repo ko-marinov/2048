@@ -20,7 +20,7 @@ class Board(GameObject):
     TILE_MOVE_DURATION_MS = 100
 
     def __init__(self, rows, cols, iterable=None):
-        super().__init__((0, 0))
+        super().__init__(gs.BOARD_POS)
         self.rows = rows
         self.cols = cols
         self.m = [[0 for c in range(cols)] for r in range(rows)]
@@ -29,6 +29,12 @@ class Board(GameObject):
         self.tiles_to_spawn = []
         self.should_wait_for_move_finished = False
         self.tile_factory = TileFactory(self)
+
+        board_image = pygame.image.load("data/images/board.png")
+        board_image_size = (gs.BOARD_WIDTH + gs.BOARD_BORDER,
+                            gs.BOARD_HEIGHT + gs.BOARD_BORDER)
+        self.board_image = pygame.transform.scale(
+            board_image, board_image_size)
 
         if iterable != None:
             for n, (i, j) in enumerate(itertools.product(range(self.rows), range(self.cols))):
@@ -125,6 +131,9 @@ class Board(GameObject):
         self.tiles_to_spawn.clear()
         self.spawn_random()
         self.should_wait_for_move_finished = False
+
+    def draw(self, surface):
+        surface.blit(self.board_image, (self.gpos.x - 10, self.gpos.y - 10))
 
     '''
     Algorithm:

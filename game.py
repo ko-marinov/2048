@@ -13,15 +13,19 @@ class Grid:
         self.rect = rect
 
     def draw(self, game, board, surface):
-        if game.check_game_over():
-            self.draw_text_at_rect_center(
-                surface, game.game_over_message, self.rect)
-            return
         pygame.draw.rect(surface, gs.SCENE_BACKGROUND_COLOR, self.rect)
         for go in game_objects:
             go.draw(surface)
+        if game.check_game_over():
+            self.draw_game_over_message(
+                surface, game.game_over_message, self.rect)
 
-    def draw_text_at_rect_center(self, surface, text, rect, color=gs.FONT_DEFAULT_COLOR):
+    def draw_game_over_message(self, surface, text, rect, color=gs.FONT_DEFAULT_COLOR):
+        block_w, block_h = 240, 80
+        block_x = rect.center[0] - block_w / 2
+        block_y = rect.center[1] - block_h / 2
+        pygame.draw.rect(surface, gs.HUD_DEFAULT_COLOR,
+                         pygame.Rect(block_x, block_y, block_w, block_h))
         text_surf = gs.FONT.render(text, True, color)
         text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
         text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
