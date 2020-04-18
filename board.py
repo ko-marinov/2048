@@ -7,6 +7,7 @@ import game_settings as gs
 from game_object import GameObject
 from vec2 import Vec2
 from tile import TileFactory
+from scorer import Scorer
 
 
 class Board(GameObject):
@@ -29,6 +30,7 @@ class Board(GameObject):
         self.tiles_to_spawn = []
         self.should_wait_for_move_finished = False
         self.tile_factory = TileFactory(self)
+        self.scorer = Scorer((10, 5))
 
         board_image = pygame.image.load("data/images/board.png")
         board_image_size = (gs.BOARD_WIDTH + gs.BOARD_BORDER,
@@ -124,6 +126,7 @@ class Board(GameObject):
 
     def handle_post_move(self):
         for tile in self.tiles_to_destroy:
+            self.scorer.add(tile.value)
             tile.destroy()
         self.tiles_to_destroy.clear()
         for val, row, col in self.tiles_to_spawn:
