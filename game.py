@@ -12,7 +12,7 @@ class Grid:
     def __init__(self, rect):
         self.rect = rect
 
-    def draw(self, game, board, surface):
+    def draw(self, game, surface):
         pygame.draw.rect(surface, gs.SCENE_BACKGROUND_COLOR, self.rect)
         for go in game_objects:
             go.draw(surface)
@@ -33,10 +33,17 @@ class Grid:
 
 
 class Game:
-    def __init__(self, board):
-        self.board = board
+    def start(self):
         self.is_game_over = False
         self.game_over_message = ""
+        self.board = Board(*gs.BOARD_CELL_SIZE)
+        self.board.spawn_random()
+        self.board.spawn_random()
+
+    def restart(self):
+        for go in game_objects:
+            go.destroy()
+        self.start()
 
     def handle_input(self, event):
         board = self.board
@@ -48,6 +55,8 @@ class Game:
             board.move(Board.UP)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
             board.move(Board.DOWN)
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN and self.is_game_over:
+            self.restart()
 
     def check_game_over(self):
         if self.is_game_over:
@@ -72,13 +81,9 @@ def main():
     # Create grid view
     grid = Grid(pygame.Rect(0, 0, gs.WINDOW_WIDTH, gs.WINDOW_HEIGHT))
 
-    # Set up initial board
-    board = Board(*gs.BOARD_CELL_SIZE)
-    board.spawn_random()
-    board.spawn_random()
-
     # Init game
-    game = Game(board)
+    game = Game()
+    game.start()
 
     # Disable repeat
     pygame.key.set_repeat(0)
@@ -89,7 +94,9 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F4 and event.mod & pygame.KMOD_ALT:
                 sys.exit()
             game.handle_input(event)
 
@@ -101,7 +108,7 @@ def main():
             go.update(dtime)
 
         # Render
-        grid.draw(game, board, screen)
+        grid.draw(game, screen)
         pygame.display.flip()
 
         pygame.time.delay(gs.FRAME_MS)
