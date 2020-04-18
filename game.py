@@ -26,7 +26,7 @@ class Grid:
         block_y = rect.center[1] - block_h / 2
         pygame.draw.rect(surface, gs.HUD_DEFAULT_COLOR,
                          pygame.Rect(block_x, block_y, block_w, block_h))
-        text_surf = gs.FONT.render(text, True, color)
+        text_surf = gs.FONT_LARGE.render(text, True, color)
         text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
         text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
         surface.blit(text_surf, [text_pos_x, text_pos_y])
@@ -41,9 +41,13 @@ class Game:
         self.board.spawn_random()
 
     def restart(self):
+        self.save_high_score()
         for go in game_objects:
             go.destroy()
         self.start()
+
+    def finish(self):
+        self.save_high_score()
 
     def handle_input(self, event):
         board = self.board
@@ -71,6 +75,19 @@ class Game:
             print("[ SUCCESS: 2048 ]\n", self.board)
         return self.is_game_over
 
+    def save_high_score(self):
+        self.board.scorer.save_high_score()
+
+
+def is_exit_event(event):
+    if event.type == pygame.QUIT:
+        return True
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+        return True
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_F4 and event.mod & pygame.KMOD_ALT:
+        return True
+    return False
+
 
 def main():
     pygame.init()
@@ -92,11 +109,8 @@ def main():
     while 1:
         # User input
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_F4 and event.mod & pygame.KMOD_ALT:
+            if is_exit_event(event):
+                game.finish()
                 sys.exit()
             game.handle_input(event)
 

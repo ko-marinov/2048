@@ -29,12 +29,16 @@ SCENE_BACKGROUND_COLOR = pygame.Color("#102526")
 HUD_DEFAULT_COLOR = pygame.Color("#18494B")
 
 # fonst
-FONT = None
+FONT_LARGE = None
+FONT_SMALL = None
 FONT_DEFAULT_COLOR = (255, 255, 255)
 FONT_NAME = "data/fonts/Roboto-Medium.ttf"
-FONT_SIZE = 32
+FONT_LARGE_SIZE = 32
+FONT_SMALL_SIZE = 12
 
 
 def init():
-    global FONT
-    FONT = pygame.font.Font(FONT_NAME, FONT_SIZE)
+    global FONT_LARGE
+    global FONT_SMALL
+    FONT_LARGE = pygame.font.Font(FONT_NAME, FONT_LARGE_SIZE)
+    FONT_SMALL = pygame.font.Font(FONT_NAME, FONT_SMALL_SIZE)
