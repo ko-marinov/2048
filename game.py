@@ -1,6 +1,5 @@
 import sys
 from enum import Enum
-from collections import namedtuple
 
 import pygame
 
@@ -8,29 +7,6 @@ import game_settings as gs
 from board import Board
 from game_object import game_objects
 from gui import gui_elements, MessageBox
-
-
-class Grid:
-    def __init__(self, rect):
-        self.rect = rect
-
-    def draw(self, game, surface):
-        pygame.draw.rect(surface, gs.SCENE_BACKGROUND_COLOR, self.rect)
-        for go in game_objects:
-            go.draw(surface)
-        for gui in gui_elements:
-            gui.draw(surface)
-
-    def draw_game_over_message(self, surface, text, rect, color=gs.FONT_DEFAULT_COLOR):
-        block_w, block_h = 240, 80
-        block_x = rect.center[0] - block_w / 2
-        block_y = rect.center[1] - block_h / 2
-        pygame.draw.rect(surface, gs.HUD_DEFAULT_COLOR,
-                         pygame.Rect(block_x, block_y, block_w, block_h))
-        text_surf = gs.FONT_LARGE.render(text, True, color)
-        text_pos_x = rect.center[0] - text_surf.get_rect().center[0]
-        text_pos_y = rect.center[1] - text_surf.get_rect().center[1]
-        surface.blit(text_surf, [text_pos_x, text_pos_y])
 
 
 GameState = Enum("GameState", "PLAY LOSE WIN PLAYAFTERWIN")
@@ -112,14 +88,19 @@ def is_exit_event(event):
     return False
 
 
+def render_all(surface):
+    surface.fill(gs.SCENE_BACKGROUND_COLOR)
+    for go in game_objects:
+        go.draw(surface)
+    for gui in gui_elements:
+        gui.draw(surface)
+
+
 def main():
     pygame.init()
     gs.init()
 
     screen = pygame.display.set_mode(gs.WINDOWS_SIZE)
-
-    # Create grid view
-    grid = Grid(pygame.Rect(0, 0, gs.WINDOW_WIDTH, gs.WINDOW_HEIGHT))
 
     # Init game
     game = Game()
@@ -144,7 +125,7 @@ def main():
         game.update(dtime)
 
         # Render
-        grid.draw(game, screen)
+        render_all(screen)
         pygame.display.flip()
 
         pygame.time.delay(gs.FRAME_MS)
