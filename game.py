@@ -66,10 +66,12 @@ class Game:
     def update_state(self):
         if self.state != GameState.LOSE and self.board.is_deadend():
             self.active_message_box = MessageBox("GAME OVER")
+            self.active_message_box.parent_rect = self.board.get_rect()
             self.state = GameState.LOSE
         if self.state == GameState.PLAY and self.board.is_complete():
             self.active_message_box = MessageBox(
                 "CONGRATS!\nYOU GET 2048!")
+            self.active_message_box.parent_rect = self.board.get_rect()
             self.state = GameState.WIN
 
     def save_high_score(self):

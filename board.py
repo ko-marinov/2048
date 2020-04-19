@@ -59,6 +59,9 @@ class Board(GameObject):
             s += "\n"
         return s
 
+    def get_rect(self):
+        return pygame.Rect(gs.BOARD_POS, gs.BOARD_SIZE)
+
     def get_state(self):
         return list([self.m[i][j] for i, j in itertools.product(range(self.rows), range(self.cols))])
 

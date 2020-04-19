@@ -12,12 +12,23 @@ class GuiBase(GameObject):
         super().__init__(pos)
         self.size = size
         self.visible = visible
+        self._parent_rect = None
 
     def register(self):
         gui_elements.append(self)
 
     def destroy(self):
         gui_elements.remove(self)
+
+    @property
+    def parent_rect(self):
+        if self._parent_rect is None:
+            return pygame.Rect((0, 0), gs.WINDOWS_SIZE)
+        return self._parent_rect
+
+    @parent_rect.setter
+    def parent_rect(self, rect):
+        self._parent_rect = rect
 
     def draw(self, surface):
         if self.visible:
@@ -49,8 +60,8 @@ class MessageBox(GuiBase):
         v_padding = 15
         rect_w = total_w + 2 * h_padding
         rect_h = total_h - line_gap + 2 * v_padding
-        rect_x = (gs.WINDOW_WIDTH - rect_w) // 2
-        rect_y = (gs.WINDOW_HEIGHT - rect_h) // 2
+        rect_x = self.parent_rect.x + (self.parent_rect.w - rect_w) // 2
+        rect_y = self.parent_rect.y + (self.parent_rect.h - rect_h) // 2
         block = pygame.Surface((rect_w, rect_h), pygame.SRCALPHA)
         block.fill(gs.HUD_DEFAULT_COLOR)
         surface.blit(block, (rect_x, rect_y))
