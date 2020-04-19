@@ -1,4 +1,5 @@
 import sys
+from enum import Enum
 from collections import namedtuple
 
 import pygame
@@ -6,6 +7,7 @@ import pygame
 import game_settings as gs
 from board import Board
 from game_object import game_objects
+from gui import gui_elements, MessageBox
 
 
 class Grid:
@@ -16,9 +18,8 @@ class Grid:
         pygame.draw.rect(surface, gs.SCENE_BACKGROUND_COLOR, self.rect)
         for go in game_objects:
             go.draw(surface)
-        if game.check_game_over():
-            self.draw_game_over_message(
-                surface, game.game_over_message, self.rect)
+        for gui in gui_elements:
+            gui.draw(surface)
 
     def draw_game_over_message(self, surface, text, rect, color=gs.FONT_DEFAULT_COLOR):
         block_w, block_h = 240, 80
@@ -32,48 +33,68 @@ class Grid:
         surface.blit(text_surf, [text_pos_x, text_pos_y])
 
 
+GameState = Enum("GameState", "PLAY LOSE WIN PLAYAFTERWIN")
+
+
 class Game:
     def start(self):
-        self.is_game_over = False
-        self.game_over_message = ""
+        self.active_message_box = None
         self.board = Board(*gs.BOARD_CELL_SIZE)
         self.board.spawn_random()
         self.board.spawn_random()
+        self.state = GameState.PLAY
 
     def restart(self):
+        self.close_active_message()
         self.save_high_score()
         for go in game_objects:
             go.destroy()
+        for gui in gui_elements:
+            gui.destroy()
         self.start()
+
+    def continue_game(self):
+        self.close_active_message()
+        self.state = GameState.PLAYAFTERWIN
 
     def finish(self):
         self.save_high_score()
 
-    def handle_input(self, event):
-        board = self.board
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-            board.move(Board.LEFT)
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-            board.move(Board.RIGHT)
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-            board.move(Board.UP)
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-            board.move(Board.DOWN)
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN and self.is_game_over:
-            self.restart()
+    def update(self, dtime):
+        self.update_state()
+        for go in game_objects:
+            go.update(dtime)
 
-    def check_game_over(self):
-        if self.is_game_over:
-            return True
-        if self.board.is_deadend():
-            self.game_over_message = "GAME OVER"
-            self.is_game_over = True
-            print("[ GAME OVER ]\n", self.board)
-        if self.board.is_complete():
-            self.game_over_message = "CONGRATULATIONS! YOU GET 2048!"
-            self.is_game_over = True
-            print("[ SUCCESS: 2048 ]\n", self.board)
-        return self.is_game_over
+    def close_active_message(self):
+        self.active_message_box.destroy()
+        self.active_message_box = None
+
+    def handle_input(self, event):
+        if self.state == GameState.PLAY or self.state == GameState.PLAYAFTERWIN:
+            board = self.board
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
+                board.move(Board.LEFT)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
+                board.move(Board.RIGHT)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+                board.move(Board.UP)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
+                board.move(Board.DOWN)
+        elif self.state == GameState.LOSE:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                self.restart()
+        elif self.state == GameState.WIN:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                self.continue_game()
+
+    def update_state(self):
+        if self.state != GameState.LOSE and self.board.is_deadend():
+            self.active_message_box = MessageBox("GAME OVER")
+            self.state = GameState.LOSE
+        if self.state == GameState.PLAY and self.board.is_complete():
+            self.active_message_box = MessageBox(
+                "CONGRATS!\nYOU GET 2048!")
+            self.state = GameState.WIN
 
     def save_high_score(self):
         self.board.scorer.save_high_score()
@@ -83,6 +104,8 @@ def is_exit_event(event):
     if event.type == pygame.QUIT:
         return True
     if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+        return True
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
         return True
     if event.type == pygame.KEYDOWN and event.key == pygame.K_F4 and event.mod & pygame.KMOD_ALT:
         return True
@@ -118,8 +141,7 @@ def main():
         last_ticks = ticks
         ticks = pygame.time.get_ticks()
         dtime = ticks - last_ticks
-        for go in game_objects:
-            go.update(dtime)
+        game.update(dtime)
 
         # Render
         grid.draw(game, screen)
