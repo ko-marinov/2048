@@ -26,7 +26,7 @@ FRAME_MS = 1000 // FPS
 
 # colors
 SCENE_BACKGROUND_COLOR = pygame.Color("#102526")
-HUD_DEFAULT_COLOR = pygame.Color("#18494B")
+HUD_DEFAULT_COLOR = pygame.Color("#18494BEE")
 
 # fonst
 FONT_LARGE = None

@@ -45,16 +45,18 @@ class MessageBox(GuiBase):
             text_surfs.append(text)
 
         # message block
-        padding = 10
-        rect_w = total_w + 2 * padding
-        rect_h = total_h - line_gap + 2 * padding
+        h_padding = 25
+        v_padding = 15
+        rect_w = total_w + 2 * h_padding
+        rect_h = total_h - line_gap + 2 * v_padding
         rect_x = (gs.WINDOW_WIDTH - rect_w) // 2
         rect_y = (gs.WINDOW_HEIGHT - rect_h) // 2
-        rect = pygame.Rect(rect_x, rect_y, rect_w, rect_h)
-        pygame.draw.rect(surface, gs.HUD_DEFAULT_COLOR, rect)
+        block = pygame.Surface((rect_w, rect_h), pygame.SRCALPHA)
+        block.fill(gs.HUD_DEFAULT_COLOR)
+        surface.blit(block, (rect_x, rect_y))
 
         # draw lines
-        text_y = rect_y + padding
+        text_y = rect_y + v_padding
         for text in text_surfs:
             text_x = rect_x + (rect_w - text.get_rect().w) // 2
             surface.blit(text, (text_x, text_y))
