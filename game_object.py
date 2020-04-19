@@ -10,10 +10,13 @@ class GameObject:
         self.parent = parent
         self._pos = Vec2(pos)
         self.processes = {}
-        game_objects.append(self)
+        self.register()
 
     def destroy(self):
         game_objects.remove(self)
+
+    def register(self):
+        game_objects.append(self)
 
     @property
     def gpos(self):
